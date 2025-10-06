@@ -175,4 +175,8 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
 
-result_*.jpg
+# Arquivos de resultado
+result_*.*
+*_result.*
+output_*.*
+*_output.*
