@@ -1,12 +1,12 @@
-# Detecção de Ferrugem em Folhas Utilizando Processamento Digital de Imagens
+# Identificação de Padrões em Imagens Utilizando Processamento Digital
 
 ## Resumo
 
-Este trabalho apresenta uma implementação de um sistema de detecção de ferrugem em folhas utilizando técnicas de processamento digital de imagens. O sistema foi desenvolvido em Python utilizando a biblioteca OpenCV, e emprega uma abordagem de duas etapas: análise interativa de padrões de cor e detecção automatizada de áreas afetadas pela ferrugem.
+Este trabalho apresenta o desenvolvimento de um sistema de identificação de padrões em imagens utilizando técnicas de processamento digital. O sistema foi implementado em Python com a biblioteca OpenCV, empregando uma abordagem híbrida que combina análise interativa de padrões de cor com detecção automatizada. O sistema permite tanto a identificação manual de padrões através de uma interface interativa quanto a utilização de valores pré-definidos para detecção automática.
 
 ## 1. Introdução
 
-A ferrugem em folhas é uma doença comum em plantas que pode causar sérios danos à agricultura. A detecção precoce dessa condição é crucial para o manejo adequado das culturas. Este trabalho propõe uma solução computacional para identificação automática de áreas afetadas pela ferrugem em folhas através de processamento de imagens.
+A identificação de padrões em imagens digitais é uma área fundamental do processamento digital de imagens, com aplicações em diversos campos como controle de qualidade, diagnóstico médico e análise agrícola. Este trabalho propõe uma solução computacional flexível que permite tanto a análise interativa de padrões quanto a detecção automatizada baseada em parâmetros pré-definidos.
 
 ## 2. Metodologia
 
@@ -16,85 +16,111 @@ A ferrugem em folhas é uma doença comum em plantas que pode causar sérios dan
 - Bibliotecas: OpenCV (cv2), NumPy
 - Ambiente de Desenvolvimento: Visual Studio Code
 
-### 2.2 Abordagem em Duas Etapas
+### 2.2 Arquitetura do Sistema
 
-#### 2.2.1 Etapa de Análise de Padrões (`pattern_analysis.py`)
+O sistema é composto por três módulos principais:
 
-O primeiro script implementa uma interface interativa que permite:
+#### 2.2.1 Módulo de Análise Interativa (`pattern_analysis.py`)
 
-- Carregamento da imagem em formato RGB
-- Seleção manual de regiões de interesse através de cliques do mouse
-- Análise de regiões 5x5 pixels ao redor do ponto selecionado
-- Cálculo da média de cores na região selecionada
-- Visualização em tempo real das áreas selecionadas
-- Exibição dos valores RGB de cada região analisada
+Implementa uma interface para análise manual de padrões:
+
+- Visualização da imagem em formato RGB
+- Seleção interativa de regiões via cliques do mouse
+- Análise de regiões 5x5 pixels
+- Exibição em tempo real dos valores RGB
+
+#### 2.2.2 Módulo de Detecção Automática (`rust_detection.py`)
+
+Implementa a detecção usando parâmetros pré-definidos:
+
+- Conversão para espaço HSV
+- Segmentação por intervalos de cor
+- Processamento morfológico
+- Visualização de resultados
+
+#### 2.2.3 Módulo Híbrido (`rust_pattern_detector.py`)
+
+Combina as abordagens anteriores em uma solução integrada:
+
+- Interface interativa para seleção de padrões
+- Mecanismo de fallback para valores pré-definidos
+- Sistema de tolerância configurável para correspondência de cores
+- Processamento morfológico adaptativo
+
+### 2.3 Metodologias de Detecção
+
+#### 2.3.1 Detecção Interativa
+
+- Seleção manual de áreas de interesse
+- Cálculo automático de intervalos de tolerância
+- Armazenamento de múltiplos padrões
+- Combinação de padrões via operações lógicas
 
 ```python
-# Exemplo do cálculo da média de cores em uma região
-avg_color = np.mean(region, axis=(0, 1)).astype(int)
+def add_pattern(self, color: np.ndarray):
+    lower_bound = np.clip(color - self.tolerance, 0, 255)
+    upper_bound = np.clip(color + self.tolerance, 0, 255)
+    self.patterns.append((lower_bound, upper_bound))
 ```
 
-#### 2.2.2 Etapa de Detecção Automática (`rust_detection.py`)
+#### 2.3.2 Detecção Automatizada
 
-O segundo script implementa a detecção automática através de:
+- Utilização de intervalos HSV pré-definidos
+- Ativação automática na ausência de padrões selecionados
+- Otimização para casos específicos
 
-- Conversão da imagem para o espaço de cores HSV
-- Definição de intervalos de cor para identificação da ferrugem
-- Aplicação de máscara de cor para segmentação
-- Operações morfológicas para redução de ruído
-- Visualização dos resultados em três perspectivas diferentes
+### 2.4 Processamento de Imagem
 
-```python
-# Definição dos limites de cor para detecção
-lower_rust = np.array([0, 100, 100])
-upper_rust = np.array([30, 255, 255])
-```
+O sistema implementa uma pipeline de processamento que inclui:
 
-### 2.3 Justificativa do Uso do Espaço de Cores HSV
-
-O espaço de cores HSV (Hue, Saturation, Value) foi escolhido para a detecção por:
-
-1. Separação mais efetiva entre informação de cor e luminosidade
-2. Maior robustez a variações de iluminação
-3. Melhor capacidade de segmentação para cores específicas
+1. Conversão de espaços de cores (BGR → RGB → HSV)
+2. Criação de máscaras de segmentação
+3. Operações morfológicas para redução de ruído
+4. Composição do resultado final com destaque visual
 
 ## 3. Resultados e Discussão
 
-### 3.1 Processamento da Imagem
+### 3.1 Interface do Usuário
 
-O sistema realiza as seguintes operações:
+O sistema oferece uma interface intuitiva que permite:
 
-1. Conversão inicial de BGR para RGB
-2. Conversão para HSV para segmentação
-3. Aplicação de operações morfológicas:
-   - Opening para remoção de ruídos
-   - Closing para preenchimento de pequenas lacunas
+- Seleção visual de padrões
+- Feedback imediato das seleções
+- Visualização em múltiplas perspectivas
+- Controle interativo do processo
 
-```python
-kernel = np.ones((3, 3), np.uint8)
-rust_mask = cv2.morphologyEx(rust_mask, cv2.MORPH_OPEN, kernel)
-rust_mask = cv2.morphologyEx(rust_mask, cv2.MORPH_CLOSE, kernel)
-```
+### 3.2 Adaptabilidade
 
-### 3.2 Visualização dos Resultados
+O sistema demonstra flexibilidade através de:
 
-O sistema gera três visualizações:
+- Suporte a múltiplos padrões de cor
+- Tolerância ajustável
+- Fallback automático para valores pré-definidos
+- Processamento adaptativo baseado no contexto
+
+### 3.3 Visualização dos Resultados
+
+São geradas três visualizações distintas:
 
 1. Imagem Original
-2. Máscara de Detecção (em preto e branco)
-3. Resultado Final (áreas de ferrugem destacadas em vermelho)
+2. Máscara de Detecção
+3. Resultado com Áreas Destacadas
 
 ## 4. Conclusão
 
-A metodologia implementada demonstrou-se eficaz na detecção de áreas afetadas pela ferrugem em folhas. A abordagem em duas etapas permite:
+A solução desenvolvida demonstrou-se eficaz e flexível, oferecendo:
 
-1. Calibração inicial através da análise interativa
-2. Detecção automática baseada nos padrões identificados
+- Interface intuitiva para análise manual
+- Detecção automática robusta
+- Combinação eficiente de abordagens
+- Resultados visuais claros e informativos
 
-A utilização do espaço de cores HSV, combinada com operações morfológicas, proporcionou resultados robustos na segmentação das áreas afetadas.
+A metodologia híbrida implementada permite tanto a análise detalhada de padrões específicos quanto a detecção automatizada eficiente, adaptando-se a diferentes necessidades e contextos de uso.
 
 ## 5. Referências
 
-1. OpenCV Documentation. Disponível em: https://docs.opencv.org/
+1. OpenCV Documentation. https://docs.opencv.org/
 2. Gonzalez, R. C., & Woods, R. E. (2018). Digital Image Processing (4th ed.).
-3. Python NumPy Documentation. Disponível em: https://numpy.org/doc/
+3. Python NumPy Documentation. https://numpy.org/doc/
+4. Szeliski, R. (2010). Computer Vision: Algorithms and Applications.
+5. Parker, J. R. (2016). Algorithms for Image Processing and Computer Vision.
