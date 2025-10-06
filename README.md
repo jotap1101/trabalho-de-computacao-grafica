@@ -18,85 +18,108 @@ A identificação de padrões em imagens digitais é uma área fundamental do pr
 
 ### 2.2 Arquitetura do Sistema
 
-O sistema é composto por três módulos principais:
+O sistema foi reorganizado em dois arquivos principais que trabalham em conjunto:
 
-#### 2.2.1 Módulo de Análise Interativa (`pattern_analysis.py`)
+#### 2.2.1 Módulo Principal (`rust_pattern_detector.py`)
 
-Implementa uma interface para análise manual de padrões:
+Implementa a classe `PatternDetector` que contém toda a lógica de processamento:
 
-- Visualização da imagem em formato RGB
-- Seleção interativa de regiões via cliques do mouse
-- Análise de regiões 5x5 pixels
-- Exibição em tempo real dos valores RGB
-
-#### 2.2.2 Módulo de Detecção Automática (`rust_detection.py`)
-
-Implementa a detecção usando parâmetros pré-definidos:
-
-- Conversão para espaço HSV
-- Segmentação por intervalos de cor
-- Processamento morfológico
-- Visualização de resultados
-
-#### 2.2.3 Módulo Híbrido (`rust_pattern_detector.py`)
-
-Combina as abordagens anteriores em uma solução integrada:
-
+- Conversão e análise no espaço de cores HSV
 - Interface interativa para seleção de padrões
-- Mecanismo de fallback para valores pré-definidos
-- Sistema de tolerância configurável para correspondência de cores
-- Processamento morfológico adaptativo
+- Sistema de tolerância específico para cada canal HSV
+- Detecção de padrões e processamento morfológico
+- Visualização e salvamento dos resultados
+
+Principais características:
+
+- Tolerâncias independentes para Hue (10), Saturação (50) e Valor (50)
+- Processamento totalmente em HSV para maior robustez
+- Mecanismo de fallback para detecção automática de ferrugem
+- Interface visual interativa com feedback em tempo real
+
+#### 2.2.2 Módulo de Aplicação (`app.py`)
+
+Implementa a interface de usuário e o fluxo principal da aplicação:
+
+- Inicialização do detector de padrões
+- Configuração dos caminhos de entrada e saída
+- Gerenciamento do fluxo de execução
+- Tratamento de exceções
 
 ### 2.3 Metodologias de Detecção
 
-#### 2.3.1 Detecção Interativa
+#### 2.3.1 Detecção Interativa em HSV
 
 - Seleção manual de áreas de interesse
-- Cálculo automático de intervalos de tolerância
+- Cálculo automático de intervalos de tolerância específicos para HSV
 - Armazenamento de múltiplos padrões
 - Combinação de padrões via operações lógicas
 
 ```python
 def add_pattern(self, color: np.ndarray):
-    lower_bound = np.clip(color - self.tolerance, 0, 255)
-    upper_bound = np.clip(color + self.tolerance, 0, 255)
+    lower_bound = np.array([
+        max(0, color[0] - self.h_tolerance),
+        max(0, color[1] - self.s_tolerance),
+        max(0, color[2] - self.v_tolerance)
+    ])
+    upper_bound = np.array([
+        min(179, color[0] + self.h_tolerance),  # Hue vai de 0 a 179 no OpenCV
+        min(255, color[1] + self.s_tolerance),
+        min(255, color[2] + self.v_tolerance)
+    ])
     self.patterns.append((lower_bound, upper_bound))
 ```
 
 #### 2.3.2 Detecção Automatizada
 
-- Utilização de intervalos HSV pré-definidos
+- Utilização de intervalos HSV pré-definidos para ferrugem
+  - Hue: 0-30
+  - Saturação: 100-255
+  - Valor: 100-255
 - Ativação automática na ausência de padrões selecionados
-- Otimização para casos específicos
+- Otimização específica para detecção de ferrugem
 
-### 2.4 Processamento de Imagem
+### 2.4 Pipeline de Processamento
 
-O sistema implementa uma pipeline de processamento que inclui:
+O sistema implementa uma pipeline de processamento otimizada em HSV:
 
-1. Conversão de espaços de cores (BGR → RGB → HSV)
-2. Criação de máscaras de segmentação
-3. Operações morfológicas para redução de ruído
-4. Composição do resultado final com destaque visual
+1. Conversão de espaços de cores:
+   - BGR → HSV para processamento
+   - BGR → RGB apenas para visualização
+2. Seleção e análise de padrões:
+   - Amostragem de regiões 5x5 pixels
+   - Cálculo de médias no espaço HSV
+   - Definição de intervalos com tolerâncias específicas para cada canal
+3. Detecção de padrões:
+   - Criação de máscaras individuais para cada padrão
+   - Combinação de máscaras via operações OR
+   - Operações morfológicas para redução de ruído
+4. Visualização de resultados:
+   - Exibição da imagem original
+   - Visualização da máscara de detecção
+   - Resultado final com áreas destacadas em vermelho
 
 ## 3. Resultados e Discussão
 
 ### 3.1 Interface do Usuário
 
-O sistema oferece uma interface intuitiva que permite:
+O sistema oferece uma interface intuitiva e eficiente:
 
-- Seleção visual de padrões
-- Feedback imediato das seleções
+- Seleção visual de padrões com feedback imediato
+- Exibição dos valores HSV das áreas selecionadas
 - Visualização em múltiplas perspectivas
-- Controle interativo do processo
+- Encerramento automático ao fechar qualquer janela de resultado
+- Controle interativo do processo via mouse e teclado
 
-### 3.2 Adaptabilidade
+### 3.2 Adaptabilidade e Robustez
 
-O sistema demonstra flexibilidade através de:
+O sistema demonstra alta flexibilidade e robustez através de:
 
+- Utilização otimizada do espaço de cores HSV
+- Tolerâncias específicas para cada canal (H, S, V)
 - Suporte a múltiplos padrões de cor
-- Tolerância ajustável
-- Fallback automático para valores pré-definidos
-- Processamento adaptativo baseado no contexto
+- Fallback automático para detecção de ferrugem
+- Processamento morfológico adaptativo
 
 ### 3.3 Visualização dos Resultados
 
