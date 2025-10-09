@@ -1,5 +1,6 @@
 from rust_pattern_detector import PatternDetector
 
+
 def main():
     # Inicializa o detector de padrões
     detector = PatternDetector()
